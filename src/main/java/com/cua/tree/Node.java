@@ -78,7 +78,7 @@ public class Node<M extends Move> {
     public double getUCBScore(Node node) {
         // exploration is a constant balancing between exploitation and exploration, with default value 0.7 (approximately sqrt(2) / 2)
         double exploration = 0.7;
-        return Double.valueOf(node.wins)/Double.valueOf(node.visits) + ISMCTS.C * Math.sqrt(Math.log(node.avails)/Double.valueOf(node.visits));
+        return Double.valueOf(node.wins)/Double.valueOf(node.visits) + exploration * Math.sqrt(Math.log(node.avails)/Double.valueOf(node.visits));
     }
 
     /**

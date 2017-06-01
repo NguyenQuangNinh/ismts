@@ -13,11 +13,15 @@ public class TicTacToeGameState extends GameState<TicTacToeMove> {
     public static final int PLAYER_X   = 1; // X
     public static final int PLAYER_O   = 2; // O
 
-    private static final int GRID_SIZE  = 3;
+    public static final int DRAW   = 100; // O
+
+    public static final int GRID_SIZE  = 7;
+    public static final int WIN_SIZE  = 5;
 
     /** The grid */
     private final int[][] grid;
     private int turn = 0;
+    private int winner = FREE; //No winner;
 
     public TicTacToeGameState(int[][] testGrid, int turn, int player) {
         super(2);
@@ -41,17 +45,19 @@ public class TicTacToeGameState extends GameState<TicTacToeMove> {
         // X start to play
         playerToMove = PLAYER_X;
         turn = 0;
+        winner = FREE; // No winner
     }
 
     @Override
     public boolean isTerminal() {
-        return hasWon(PLAYER_O) || hasWon(PLAYER_X) || turn == 9;
+        return winner != FREE;
     }
 
     @Override
     public GameState clone() {
         TicTacToeGameState st = new TicTacToeGameState();
         st.turn = turn;
+        st.winner = winner;
         st.playerToMove = playerToMove;
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
@@ -64,8 +70,62 @@ public class TicTacToeGameState extends GameState<TicTacToeMove> {
 
     @Override
     public void doMove(TicTacToeMove move) {
-        grid[move.getX()][move.getY()] = move.getPlayer();
+        int x = move.getX();
+        int y = move.getY();
+        int player = move.getPlayer();
+        int winCount = 1;
+        int lastCell = FREE;
+        int rear = 0;
+        boolean startCounting = false;
+
+        grid[move.getX()][move.getY()] = player;
         turn++;
+
+        //check end conditions
+
+        //check row
+        winner = TicTacToeAlgorithm.checkRow(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check col
+        winner = TicTacToeAlgorithm.checkColumn(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check diag
+        winner = TicTacToeAlgorithm.checkDiag(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check Anti Diag
+        winner = TicTacToeAlgorithm.checkAntiDiag(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check Double Three
+        winner = TicTacToeAlgorithm.checkDoubleThree(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check Four Three
+        winner = TicTacToeAlgorithm.checkFourThree(grid, move);
+        if(winner != FREE) {
+            return;
+        }
+
+        //check draw
+        if(turn == (GRID_SIZE * GRID_SIZE)){
+            //report draw
+            winner = DRAW;
+            return;
+        }
+
         this.playerToMove = this.getNextPlayer(this.playerToMove);
     }
 
@@ -90,13 +150,13 @@ public class TicTacToeGameState extends GameState<TicTacToeMove> {
 
     @Override
     public GameState cloneAndRandomize(int observer) {
-       return this.clone();
+        return this.clone();
     }
 
     @Override
     public double getResult(int player) {
         int winner = getWinner();
-        if(winner == 100) {
+        if(winner == DRAW) {
             return 0.5;
         }
         else if( winner == player) {
@@ -109,47 +169,16 @@ public class TicTacToeGameState extends GameState<TicTacToeMove> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(grid[0][0] == FREE ? " " : (grid[0][0] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[1][0] == FREE ? " " : (grid[1][0] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[2][0] == FREE ? " " : (grid[2][0] == PLAYER_O ? "O" : "X"));
-        sb.append("\n");
-        sb.append(grid[0][1] == FREE ? " " : (grid[0][1] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[1][1] == FREE ? " " : (grid[1][1] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[2][1] == FREE ? " " : (grid[2][1] == PLAYER_O ? "O" : "X"));
-        sb.append("\n");
-        sb.append(grid[0][2] == FREE ? " " : (grid[0][2] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[1][2] == FREE ? " " : (grid[1][2] == PLAYER_O ? "O" : "X"));
-        sb.append(grid[2][2] == FREE ? " " : (grid[2][2] == PLAYER_O ? "O" : "X"));
-        sb.append("\n");
+        for(int i = 0; i < GRID_SIZE; i++) {
+            for(int j = 0; j < GRID_SIZE; j++) {
+                sb.append(grid[i][j] == FREE ? " " : (grid[i][j] == PLAYER_O ? "O" : "X"));
+            }
+            sb.append("\n");
+        }
         return sb.toString();
     }
 
     public int getWinner() {
-        if (hasWon(PLAYER_O)) {
-            return PLAYER_O;
-        } else if(hasWon(PLAYER_X)) {
-            return PLAYER_X;
-        } else {
-            return 100;
-        }
-    }
-
-    private boolean hasWon(int player) {
-        return
-                (player == grid[0][1] && player == grid[0][2] && player == grid[0][0])
-                        ||
-                        (player == grid[1][1] && player == grid[1][2] && player == grid[1][0])
-                        ||
-                        (player == grid[2][1] && player == grid[2][2] && player == grid[2][0])
-                        ||
-                        (player == grid[1][0] && player == grid[2][0] && player == grid[0][0])
-                        ||
-                        (player == grid[1][1] && player == grid[2][1] && player == grid[0][1])
-                        ||
-                        (player == grid[1][2] && player == grid[2][2] && player == grid[0][2])
-                        ||
-                        (player == grid[1][1] && player == grid[2][2] && player == grid[0][0])
-                        ||
-                        (player == grid[1][1] && player == grid[2][0] && player == grid[0][2]);
+        return winner;
     }
 }
