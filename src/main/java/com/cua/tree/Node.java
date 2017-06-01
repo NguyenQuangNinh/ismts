@@ -10,6 +10,7 @@ public class Node<M extends Move> {
     private int avails;
     private int visits;
     private double wins;
+    private double winsSquare;
     private ArrayList<Node> childNodes;
     private M move;
     private Node parent;
@@ -19,6 +20,7 @@ public class Node<M extends Move> {
         this.parent = parent; // "None" for the root node
         this.childNodes = new ArrayList<>();
         this.wins = 0;
+        this.winsSquare = 0;
         this.visits = 0;
         this.avails = 1;
         this.playerJustMoved = playerJustMoved; // the only part of the state that the Node needs later
@@ -79,7 +81,10 @@ public class Node<M extends Move> {
         // exploration is a constant balancing between exploitation and exploration, with default value 0.7 (approximately sqrt(2) / 2)
         double exploration = 0.7;
         double ri = Double.valueOf(node.wins)/Double.valueOf(node.visits);
-        return ri + Math.sqrt(((Math.log(node.avails)) / Double.valueOf(node.visits)) * Math.min(0.25, (ri - ri*ri + Math.sqrt(2 * (Math.log(node.avails)) / Double.valueOf(node.visits)))));
+        double rie = Double.valueOf(node.winsSquare)/Double.valueOf(node.visits);
+        double variant = Math.min(0.25, (rie - ri*ri + Math.sqrt((2*Math.log(node.avails))/Double.valueOf(node.visits))));
+        return ri + Math.sqrt((Math.log(this.visits)/Double.valueOf(node.visits)) * variant);
+//        return ri + Math.sqrt(((Math.log(this.visits)) / Double.valueOf(node.visits)) * Math.min(0.25, (ri - ri*ri + Math.sqrt(2 * (Math.log(this.visits)) / Double.valueOf(node.visits)))));
 //        return ri + exploration * Math.sqrt(Math.log(node.avails)/Double.valueOf(node.visits));
     }
 
@@ -102,7 +107,9 @@ public class Node<M extends Move> {
         this.visits++;
         if(this.playerJustMoved != -1)
         {
-            this.wins += terminalState.getResult(this.playerJustMoved);
+            double reward = terminalState.getResult(this.playerJustMoved);
+            this.wins += reward;
+            this.winsSquare += reward*reward;
         }
     }
 
@@ -145,9 +152,9 @@ public class Node<M extends Move> {
         double max = -9999.0;
         Node result = null;
         for(Node node : childNodes) {
-           if(max < node.getWinRate())
+           if(max < node.wins)
            {
-               max = node.getWinRate();
+               max = node.wins;
                result = node;
            }
         }
